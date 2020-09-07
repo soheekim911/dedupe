@@ -165,6 +165,8 @@ class DedupeBlockLearner(BlockLearner):
 
                 cover[predicate] = pairs
 
+                con.close()
+
         return cover
 
     def estimate(self, comparisons):
