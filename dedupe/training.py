@@ -8,6 +8,8 @@ import logging
 import collections
 import functools
 from abc import ABC, abstractmethod
+import sqlite3
+import tempfile
 
 from . import blocking, predicates, core
 
@@ -135,28 +137,33 @@ class DedupeBlockLearner(BlockLearner):
         cover = {}
 
         pair_enumerator = core.Enumerator()
-        n_records = len(records)
 
         for predicate in blocker.predicates:
-            pred_cover = collections.defaultdict(set)
 
-            for id, record in records.items():
-                blocks = predicate(record)
-                for block in blocks:
-                    pred_cover[block].add(id)
+            with tempfile.TemporaryDirectory() as temp_dir:
+                con = sqlite3.connect(temp_dir + '/pred_blocks.db')
 
-            if not pred_cover:
-                continue
+                con.execute('''CREATE TABLE blocking_map
+                               (block_key text, record_id int)
+                            ''')
 
-            max_cover = max(len(v) for v in pred_cover.values())
-            if max_cover == n_records:
-                continue
+                con.executemany("INSERT INTO blocking_map values (?, ?)",
+                                ((block_key, record_id)
+                                 for record_id, record in records.items()
+                                 for block_key in predicate(record)))
 
-            pairs = {pair_enumerator[pair]
-                     for block in pred_cover.values()
-                     for pair in itertools.combinations(sorted(block), 2)}
+                con.execute('''CREATE INDEX block_key_idx
+                               ON blocking_map (block_key)''')
+                pairs = con.execute('''SELECT DISTINCT a.record_id, b.record_id
+                                       FROM blocking_map a
+                                       INNER JOIN blocking_map b
+                                       USING (block_key)
+                                       WHERE a.record_id < b.record_id''')
 
-            cover[predicate] = pairs
+                pairs = {pair_enumerator[pair]
+                         for pair in pairs}
+
+                cover[predicate] = pairs
 
         return cover
 
