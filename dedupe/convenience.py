@@ -60,16 +60,17 @@ def console_label(deduper: dedupe.api.ActiveMatching) -> None:  # pragma: no cov
 
         print("{0}/10 positive, {1}/10 negative".format(n_match, n_distinct),
               file=sys.stderr)
-        print('Do these records refer to the same thing?', file=sys.stderr)
+#print('Do these records refer to the same thing?', file=sys.stderr)
+        print('이 두 레코드가 같은 상품이 맞나요?', file=sys.stderr)
 
         valid_response = False
         user_input = ''
         while not valid_response:
             if examples_buffer:
-                prompt = '(y)es / (n)o / (u)nsure / (f)inished / (p)revious'
+                prompt = '(y)같음 / (n)다름 / (u)불확실 / (f)라벨링 끝내기 / (p)이전 문제로'
                 valid_responses = {'y', 'n', 'u', 'f', 'p'}
             else:
-                prompt = '(y)es / (n)o / (u)nsure / (f)inished'
+                prompt = '(y)같음 / (n)다름 / (u)불확실 / (f)라벨링 끝내기'
                 valid_responses = {'y', 'n', 'u', 'f'}
 
             print(prompt, file=sys.stderr)
