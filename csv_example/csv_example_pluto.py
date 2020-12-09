@@ -38,6 +38,18 @@ def preProcess(column):
         column = None
     return column
 
+def preProcess_half(column):
+    """
+    각 필드의 value를 받아서 유니코드로는 안 바꾸고 casing, space 제거 등등 클렌징만
+    """
+    column = re.sub('  +', ' ', column)
+    column = re.sub('\n', ' ', column)
+    column = column.strip().strip('"').strip("'").lower().strip()
+    # If data is missing, indicate that by setting the value to `None`
+    if not column:
+        column = None
+    return column
+
 
 def readData(filename):
     """
@@ -46,10 +58,11 @@ def readData(filename):
     """
 
     data_d = {}
+
     with open(filename) as f:
         reader = csv.DictReader(f)
         for row in reader:
-            clean_row = [(k, preProcess(v)) for (k, v) in row.items()]
+            clean_row = [(k, [preProcess_half(v), preProcess(v)]) for (k, v) in row.items()]
             row_id = int(row['index'])
             data_d[row_id] = dict(clean_row)
 
@@ -79,10 +92,10 @@ if __name__ == '__main__':
 
     # ## Setup
 
-    input_file = 'dedupe_test_CF.csv'
-    output_file = 'dedupe_test_CF_output_02.csv'
-    settings_file = 'csv_example_learned_settings'
-    training_file = 'csv_example_training.json'
+    input_file = 'dedupe_test_3comps.csv'
+    output_file = 'dedupe_test_3comps_output.csv'
+    settings_file = 'csv_example_learned_settings_3comps'
+    training_file = 'csv_example_training_3comps.json'
 
     print('importing data ...')
     data_d = readData(input_file)
@@ -98,9 +111,12 @@ if __name__ == '__main__':
         # Define the fields dedupe will pay attention to
         fields = [
             {'field': 'product_name', 'type': 'String', 'has missing':True},
+            {'field': 'product_desc', 'type': 'String', 'has missing': True},
             {'field': 'taxation', 'type': 'String'},
             {'field': 'price', 'type': 'String'},
-            {'field': 'product_desc', 'type': 'String', 'has missing': True},
+            {'field': 'origin', 'type': 'String', 'has missing': True},
+            {'field': 'storage', 'type': 'String', 'has missing': True},
+            {'field': 'unit', 'type': 'String', 'has missing': True},
             {'field': 'weight', 'type':'String', 'has missing': True},
             {'field': 'quantity', 'type':'String', 'has missing': True}
 		]
