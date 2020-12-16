@@ -356,6 +356,7 @@ def firstTokenPredicate(field: str) -> Sequence[str]:
 
 def commonIntegerPredicate(field: str) -> Set[str]:
     """return any integers"""
+    print(integers(field))
     return {str(int(i)) for i in integers(field)}
 
 

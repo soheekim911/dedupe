@@ -77,7 +77,6 @@ def dedupeSamplePredicate(subsample_size, predicate, items):
         if pivot == 10000:
             if len(block_dict) + len(sample) < 10:
                 return sample
-
         block_keys = predicate_function(column)
 
         for block_key in block_keys:

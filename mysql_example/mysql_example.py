@@ -25,9 +25,11 @@ import logging
 import optparse
 import locale
 import json
+import pdb
 
 import MySQLdb
 import MySQLdb.cursors
+import mysql.connector
 
 import dedupe
 import dedupe.backport
@@ -88,14 +90,20 @@ if __name__ == '__main__':
     # We use Server Side cursors (SSDictCursor and SSCursor) to [avoid
     # having to have enormous result sets in
     # memory](http://stackoverflow.com/questions/1808150/how-to-efficiently-use-mysqldb-sscursor).
-    read_con = MySQLdb.connect(db='heropluto',
-                               charset='utf8',
-                               read_default_file=MYSQL_CNF,
-                               cursorclass=MySQLdb.cursors.SSDictCursor)
+    read_con = mysql.connector.connect(db='heropluto',
+                                       option_files=MYSQL_CNF)
 
-    write_con = MySQLdb.connect(db='heropluto',
-                                charset='utf8',
-                                read_default_file=MYSQL_CNF)
+    write_con = mysql.connector.connect(db='heropluto',
+                                        option_files=MYSQL_CNF)
+
+    # MySQLdb 모듈이 자꾸 string을 binary로 불러와서 mysql.connector로 교체함
+    # read_con = MySQLdb.connect(db='heropluto',
+    #                            charset='utf8',
+    #                            read_default_file=MYSQL_CNF,
+    #                            cursorclass=MySQLdb.cursors.SSDictCursor)
+    # write_con = MySQLdb.connect(db='heropluto',
+    #                             charset='utf8',
+    #                             read_default_file=MYSQL_CNF)
 
     # We'll be using variations on this following select statement to pull
     # in campaign donor info.
@@ -103,8 +111,7 @@ if __name__ == '__main__':
     # We did a fair amount of preprocessing of the fields in
     # `mysql_init_db.py`
 
-    DONOR_SELECT = "SELECT donor_id, city, name, zip, state, address " \
-                   "from processed_donors"
+    DONOR_SELECT = "SELECT donor_id, city, `name`, zip, state, address from processed_donors"
 
     # ## Training
 
@@ -118,9 +125,9 @@ if __name__ == '__main__':
         # The address, city, and zip fields are often missing, so we'll
         # tell dedupe that, and we'll learn a model that take that into
         # account
-        fields = [{'field': 'name', 'type': 'String'},
-                  {'field': 'address', 'type': 'String',
-                   'has missing': True},
+        fields = [
+                  {'field': 'name', 'type': 'String'},
+                  {'field': 'address', 'type': 'String','has missing': True},
                   {'field': 'city', 'type': 'ShortString', 'has missing': True},
                   {'field': 'state', 'type': 'ShortString', 'has missing': True},
                   {'field': 'zip', 'type': 'ShortString', 'has missing': True},
@@ -132,7 +139,10 @@ if __name__ == '__main__':
         # We will sample pairs from the entire donor table for training
         with read_con.cursor() as cur:
             cur.execute(DONOR_SELECT)
-            temp_d = {i: row for i, row in enumerate(cur)}
+            columns = [column[0] for column in cur.description]
+            print(columns)
+            temp_d = dict((i, dict(zip(columns, row))) for i, row in enumerate(cur))
+            # temp_d = {i: dict(zip(row) for i, row in enumerate(cur)}
 
         # If we have training data saved from a previous run of dedupe,
         # look for it an load it in.
@@ -151,6 +161,7 @@ if __name__ == '__main__':
         # ## Active learning
 
         print('starting active labeling...')
+        pdb.set_trace()
         # Starts the training loop. Dedupe will find the next pair of records
         # it is least certain about and ask you to label them as duplicates
         # or not.

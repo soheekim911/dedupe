@@ -1230,6 +1230,7 @@ class Dedupe(ActiveMatching, DedupeMatching):
 
         if training_file:
             self._read_training(training_file)
+        # print(data)
         self._sample(data, sample_size, blocked_proportion, original_length)
 
     def _sample(self,
