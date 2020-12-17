@@ -356,7 +356,6 @@ def firstTokenPredicate(field: str) -> Sequence[str]:
 
 def commonIntegerPredicate(field: str) -> Set[str]:
     """return any integers"""
-    print(integers(field))
     return {str(int(i)) for i in integers(field)}
 
 
@@ -387,6 +386,7 @@ def hundredIntegersOddPredicate(field: str) -> Set[str]:
 
 def firstIntegerPredicate(field: str) -> Sequence[str]:
     first_token = start_integer(field)
+
     if first_token:
         return first_token.groups()
     else:

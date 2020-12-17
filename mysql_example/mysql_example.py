@@ -111,7 +111,7 @@ if __name__ == '__main__':
     # We did a fair amount of preprocessing of the fields in
     # `mysql_init_db.py`
 
-    DONOR_SELECT = "SELECT donor_id, city, `name`, zip, state, address from processed_donors"
+    DONOR_SELECT = "SELECT donor_id, city, `name`, zip, state, address from processed_donors limit 10000"
 
     # ## Training
 
@@ -142,7 +142,6 @@ if __name__ == '__main__':
             columns = [column[0] for column in cur.description]
             print(columns)
             temp_d = dict((i, dict(zip(columns, row))) for i, row in enumerate(cur))
-            # temp_d = {i: dict(zip(row) for i, row in enumerate(cur)}
 
         # If we have training data saved from a previous run of dedupe,
         # look for it an load it in.
@@ -154,6 +153,7 @@ if __name__ == '__main__':
             with open(training_file) as tf:
                 deduper.prepare_training(temp_d, training_file=tf)
         else:
+            print('No existing training file. Preparing for training...')
             deduper.prepare_training(temp_d)
 
         del temp_d
@@ -161,7 +161,6 @@ if __name__ == '__main__':
         # ## Active learning
 
         print('starting active labeling...')
-        pdb.set_trace()
         # Starts the training loop. Dedupe will find the next pair of records
         # it is least certain about and ask you to label them as duplicates
         # or not.
@@ -217,15 +216,18 @@ if __name__ == '__main__':
     # generator that yields unique `(block_key, donor_id)` tuples.
     print('writing blocking map')
 
+    # ONLY_DONER = "SELECT donor_id FROM processed_donors"
     with read_con.cursor() as read_cur:
         read_cur.execute(DONOR_SELECT)
-        full_data = ((row['donor_id'], row) for row in read_cur)
+        # print(read_cur.fetchall()[:10])
+        print(list(read_cur))
+        full_data = (row for row in read_cur)
+        print(list(full_data), type(full_data))
         b_data = deduper.fingerprinter(full_data)
-
+        print(list(b_data), type(b_data))
         with write_con.cursor() as write_cur:
 
-            write_cur.executemany("INSERT INTO blocking_map VALUES (%s, %s)",
-                                  b_data)
+            write_cur.executemany("INSERT INTO blocking_map VALUES (%s, %s)", b_data)
 
     write_con.commit()
 

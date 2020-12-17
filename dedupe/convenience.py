@@ -54,7 +54,7 @@ def console_label(deduper: dedupe.api.ActiveMatching) -> None:  # pragma: no cov
 
         for pair in record_pair:
             for field in fields:
-                line = "%s : %s" % (field, pair[field][0])
+                line = "%s : %s" % (field, pair[field])
                 print(line, file=sys.stderr)
             print(file=sys.stderr)
 
